@@ -1,0 +1,15 @@
+extends layout
+
+block main 
+    h1= 'Välkommen till zoo:et!'
+
+    each val, index in list
+        div.listItem= index + ': ' + val  
+    include form.pug
+
+
+    if key
+        h1= `Det finns ${value} st ${key} i zoo:et!`
+    if error
+        h1= error
+
