@@ -1,11 +1,4 @@
-form(action='/add', method='post')
-        label Lägg till ny djursort
-        input(type='text', placeholder='typ av djur' name='animal')
-        input(type='text', placeholder='hur många?' name='amount')
-
-        button(type='submit') Lägg till! 
-
 form(action='/search', method='post')
-        label Sök bland alla djur!
-        input(type='text', placeholder='typ av djur, ental t ex apa' name='search')
-        button(type='submit') sök 
+    label Search your list
+    input(type='text', placeholder='ex cucumber' name='search')
+    button(type='submit') sök 

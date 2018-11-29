@@ -1,15 +1,37 @@
 extends layout
 
 block main 
-    h1= 'Välkommen till zoo:et!'
+    h1= 'Grocery List 🥑'
+    div.container
+        div.listWrapper 
+            div.columns
+                p.col grocery
+                p.col amount
+                p.col3
+            if items
+                each val in items 
+                    div.listItem
+                        p.col= val.item 
+                        p.col= val.amount
+                        form(action='/delete', class='col3' method='post')
+                            input(type="hidden" value=val.id name="buttonId")
+                            button(type='submit' class='deleteButton') 
+                                            i.fas.fa-trash-alt
 
-    each val, index in list
-        div.listItem= index + ': ' + val  
-    include form.pug
+        
+        form(action='/add', method='post', id="form")
+                label Add new grocery
+                input(type='text', placeholder='ex cucumber' required='true' name='item')
+                input(type='number', placeholder='ex 2' required='true' name='amount')
+                button(type='submit' class='addButton') Lägg till! 
+        
+        include form.pug
+        
+        if searched.length > 0
+            p= searched[0].item + ' finns det ' + searched[0].amount + ' st av'
+        else 
+            p finns inte med i listan
 
+        
 
-    if key
-        h1= `Det finns ${value} st ${key} i zoo:et!`
-    if error
-        h1= error
-
+    script(src='/js/app.js' type="text/javascript")

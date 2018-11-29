@@ -3,11 +3,17 @@ const express = require('express')
 const app = express()
 const port = 3000
 const path = require('path');
-var fs = require("fs");
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
 
-app.use(bodyParser.urlencoded({extended: true}))
 
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+
+
+//makes mongoose global to use in all files
+global.mongoose = require("mongoose");
+
+mongoose.connect('mongodb://localhost/grocerylist');
 
 // use is for loading the middleware function, serving static files like css
 app.use(express.static( '../public/'));
@@ -17,114 +23,117 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, '../views'));
 
 
-let data = fs.readFileSync('../public/list.json');
-let list = JSON.parse(data);
 
+//import the schema, defining how the object will look like
+const Item = require('./models/item');
 
-app.get('/', (req, res) => res.render('index', {list})
-);
+//homepage 
+app.get('/', function(req, res, next){
+    var passedVariable = req.query.q;
+    console.log('passed', passedVariable)
+    Item.find()
+        .exec(function(err, items){
+        if(err) return next(err);
+        //res.json(animals);
+        console.log(items)
+        let newArr = items.filter(item => item.item === passedVariable)
+        console.log('ny arr', newArr);
+        res.render('index', { items, searched : newArr })
+    })
+})
 
-app.post('/add', (req,res) => {
-    //console.log(req.body)
-    let animal = req.body.animal;
-    let amount = parseInt(req.body.amount);
+//post to db via html-form 
+app.post('/add', function(req, res, next){
+    let item = req.body.item.toLowerCase();
+    let amount = req.body.amount;
 
-    //byt ifsats
-    if(!amount || !animal){
-        res.send('Fyll i ett värde')
-    } 
-    else {
-            list[animal] = amount;
-    
-            let newJson = JSON.stringify(list, null, 4)
-            fs.writeFileSync('../public/list.json', newJson);
-    
-            res.render('index', {list})
-    }
+ //creates a new instance of the model and passing object to constructor
+    var newItem = new Item({item, amount});
 
-});
-
-app.post('/search', (req,res) => {
-
-    let key = req.body.search;
-    //key.toLowerCase();
-    //console.log(Object.keys(list))
-    
-    if(Object.keys(list).includes(key)){
-        let value = list[key];
-        res.render('index',{key: key, value: value, list} )
-    } 
-    else {
-      res.render('index', {error: `Det finns ingen ${key} i zoo:et just nu.. 😟`, list});
-    }
-
+    newItem.save(function(err, newItem){
+        if(err) return next(err);
+        res.status(201)
+        res.redirect('/') 
+    })
 })
 
 
-app.get('/:key', (req, res) => {
+//search html-form
+app.post('/search', function(req, res, next){
+    console.log(req.body.search);
+    let search = req.body.search;
+    res.redirect('/?q=' + search)
+});
 
-    let key = req.params.key;
-    key.toLowerCase();
-    console.log(Object.keys(list))
+
+//delete button
+app.post('/delete', (req, res, next) => {
+    console.log(req.bsody);
+    Item.deleteOne({_id: req.body.buttonId})
     
-    if(Object.keys(list).includes(key)){
-    let value = list[key];
-    res.send(`Du har sökt efter ${key.charAt(0).toUpperCase() + key.slice(1)}, temperaturen är just nu ${value} grader`)
-  } else {
-    res.send(`Din sökning på ${key.charAt(0).toUpperCase() + key.slice(1)} gav inget resultat`)
-  }
-})
-
-
-//lägg till i url
-app.get('/add/:animal/:amount', (req, res) => {
-    console.log(list);
-    let animal = req.params.animal;
-    let amount = parseInt(req.params.amount);
-
+    .exec(function(err, restaurant){
+        if(err) return next(err);
+        res.redirect('/')
+    })
     
-        list[animal] = amount;
+    });
 
-        let newJson = JSON.stringify(list, null, 4)
-        fs.writeFileSync('../public/list.json', newJson);
 
-        res.send('Lades till i listan!')
-
+//add new grocery in url
+app.get('/add/:item/:amount', (req, res) => {
+    let item = req.params;
+    console.log(item);
+    var newItem = new Item(item);
+    newItem.save(function(err, newItem){
+        if(err) return next(err);
+        res.status(201)
+        res.send('lades till');
+    })
 });
 
-// update i url
-
-app.get('/update/:animal/:newanimal/:amount', (req, res) => {
-
-    let animal = req.params.animal;
-    delete list[animal];
-
-    let amount = parseInt(req.params.amount);
-    let newAnimal = req.params.newanimal;
-
-    list[newAnimal] = amount;
-
-        let newJson = JSON.stringify(list, null, 4)
-        fs.writeFileSync('../public/list.json', newJson);
-
-        res.send(`${animal} uppdaterades till ${newAnimal} ${amount}`)
-
+//search url
+app.get('/search/:item', (req, res) => {
+    let search = req.params.item;
+    console.log(search)
+    Item.findOne({item : search})
+        .exec((err, item) => {
+         if(err) { 
+             return next(err)
+         }
+        else {
+            res.status(201)
+            res.send({item})
+            }
+        })
 });
 
-//delete i url
+//uppdate with url
+app.get('/update/:item/:amount', (req, res, next) => {
 
-app.get('/update/:animal', (req, res) => {
+    let newItem = req.params.item;
+    let newAmount = req.params.amount;
+    console.log('PARAMS:', newItem, newAmount); 
+    Item.findOne({item : newItem}, function(err, item){
+        if(err) return next(err)
+        item.item = newItem; 
+        item.amount = newAmount;
+        item.save();
+        res.send(item);
+    })
+});
 
-    let animal = req.params.animal;
-    delete list[animal];
-
-
-
-        res.send(`raderade ${animal}`)
-
+//delete with url 
+app.get('/delete/:item', (req, res, next) => {
+    console.log('vill radera', req.params.item);
+    let item = req.params.item;
+    Item.deleteOne({item : item})
+    .exec(function(err, item){
+        if(err) return next(err);
+        res.redirect('/')
+    })
 });
 
 
 
 
-app.listen(port, () => console.log(`App listening on port ${port}!`))
+app.listen(port, () => console.log(`App listening on port ${port}!`));
