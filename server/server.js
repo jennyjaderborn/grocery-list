@@ -50,12 +50,17 @@ app.post('/add', function(req, res, next){
  //creates a new instance of the model and passing object to constructor
     var newItem = new Item({item, amount});
 
-    newItem.save(function(err, newItem){
-        if(err) return next(err);
-        res.status(201)
-        res.redirect('/') 
+    newItem.save()
+    .then(result => {
+        console.log('result:', result);
+        res.status(201);
+        res.redirect('/');
     })
-})
+    .catch(err => {
+        console.log('error:', err);
+        res.status(500);
+    });
+});
 
 
 //search html-form
