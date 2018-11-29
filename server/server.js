@@ -29,17 +29,21 @@ const Item = require('./models/item');
 
 //homepage 
 app.get('/', function(req, res, next){
-    var passedVariable = req.query.q;
+    let passedVariable = req.query.q;
     console.log('passed', passedVariable)
+    //find all
     Item.find()
-        .exec(function(err, items){
-        if(err) return next(err);
-        //res.json(animals);
-        console.log(items)
-        let newArr = items.filter(item => item.item === passedVariable)
-        console.log('ny arr', newArr);
-        res.render('index', { items, searched : newArr })
-    })
+        .exec()
+        .then(items => {
+            console.log(items);
+            res.status(200);
+            let newArr = items.filter(item => item.item === passedVariable)
+            res.render('index', { items, searched : newArr })
+        })
+        .catch(err => {
+            console.log('error:', err);
+            res.status(500);
+        });
 })
 
 //post to db via html-form 
@@ -53,7 +57,7 @@ app.post('/add', function(req, res, next){
     newItem.save()
     .then(result => {
         console.log('result:', result);
-        res.status(201);
+        res.status(200);
         res.redirect('/');
     })
     .catch(err => {
@@ -73,7 +77,7 @@ app.post('/search', function(req, res, next){
 
 //delete button
 app.post('/delete', (req, res, next) => {
-    console.log(req.bsody);
+    console.log(req.body);
     Item.deleteOne({_id: req.body.buttonId})
     
     .exec(function(err, restaurant){
