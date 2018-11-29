@@ -79,13 +79,16 @@ app.post('/search', function(req, res, next){
 app.post('/delete', (req, res, next) => {
     console.log(req.body);
     Item.deleteOne({_id: req.body.buttonId})
-    
-    .exec(function(err, restaurant){
-        if(err) return next(err);
+    .exec()
+    .then(result => {
+        res.status(200);
         res.redirect('/')
+
     })
-    
+    .catch(err => {
+        console.log(err);
     });
+});
 
 
 //add new grocery in url
