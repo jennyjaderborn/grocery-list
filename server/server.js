@@ -28,12 +28,12 @@ app.set('views', path.join(__dirname, '../views'));
 const Item = require('./models/item');
 
 //homepage 
-app.get('/', function(req, res, next){
+app.get('/', (req, res, next) => {
     let passedVariable = req.query.q;
     console.log('passed', passedVariable)
     //find all
     Item.find()
-        .exec()
+        .exec() //using exec to get a promise
         .then(items => {
             console.log(items);
             res.status(200);
@@ -43,11 +43,12 @@ app.get('/', function(req, res, next){
         .catch(err => {
             console.log('error:', err);
             res.status(500);
+            res.send("Something went wrong..")
         });
 })
 
 //post to db via html-form 
-app.post('/add', function(req, res, next){
+app.post('/add', (req, res, next) => {
     let item = req.body.item.toLowerCase();
     let amount = req.body.amount;
 
@@ -63,12 +64,13 @@ app.post('/add', function(req, res, next){
     .catch(err => {
         console.log('error:', err);
         res.status(500);
+        res.send('Something went wrong..')
     });
 });
 
 
 //search html-form
-app.post('/search', function(req, res, next){
+app.post('/search', (req, res, next) => {
     console.log(req.body.search);
     let search = req.body.search;
     res.redirect('/?q=' + search)
@@ -80,27 +82,37 @@ app.post('/delete', (req, res, next) => {
     console.log(req.body);
     Item.deleteOne({_id: req.body.buttonId})
     .exec()
-    .then(result => {
-        res.status(200);
+    .then(
+        res.status(200),
         res.redirect('/')
-
-    })
+        )
     .catch(err => {
         console.log(err);
+        res.status(500);
+        res.send("Something went wrong");
     });
 });
 
 
 //add new grocery in url
 app.get('/add/:item/:amount', (req, res) => {
-    let item = req.params;
+    let item = req.params.item.toLowerCase();
+    let amount = req.params.amount;
     console.log(item);
-    var newItem = new Item(item);
-    newItem.save(function(err, newItem){
-        if(err) return next(err);
-        res.status(201)
-        res.send('lades till');
+    var newItem = new Item({item, amount});
+    newItem.save()
+    .then(result => {
+        console.log('result:', result);
+        res.status(200).json({
+            result
+        });
     })
+    .catch(err => {
+        console.log('error:', err);
+        res.status(500).json({
+            error: err
+        });
+    });
 });
 
 //search url
@@ -108,44 +120,74 @@ app.get('/search/:item', (req, res) => {
     let search = req.params.item;
     console.log(search)
     Item.findOne({item : search})
-        .exec((err, item) => {
-         if(err) { 
-             return next(err)
-         }
-        else {
-            res.status(201)
-            res.send({item})
-            }
+    .exec()
+    .then(result => {
+        res.status(200).json({ result })
+    })
+    .catch(err => {
+        res.status(500).json({
+            error: err
         })
+    })
 });
 
-//uppdate with url
+//uppdate with url, json response
 app.get('/update/:item/:amount', (req, res, next) => {
 
     let newItem = req.params.item;
     let newAmount = req.params.amount;
-    console.log('PARAMS:', newItem, newAmount); 
-    Item.findOne({item : newItem}, function(err, item){
-        if(err) return next(err)
-        item.item = newItem; 
-        item.amount = newAmount;
-        item.save();
-        res.send(item);
+    console.log('PARAMS:', newItem, newAmount);
+    Item.findOne({item : newItem})
+    .exec()
+    .then(result => {
+        result.item = newItem; 
+        result.amount = newAmount;
+        result.save()
+        .then(result => {
+            res.status(200).json({ result })
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            })
+        })
+    })
+    .catch(err => {
+        res.status(500).json({
+            error: err
+        })
     })
 });
 
-//delete with url 
+//delete with url
 app.get('/delete/:item', (req, res, next) => {
     console.log('vill radera', req.params.item);
     let item = req.params.item;
     Item.deleteOne({item : item})
-    .exec(function(err, item){
-        if(err) return next(err);
-        res.redirect('/')
+    .exec()
+    .then(result => {
+        res.status(200).json({ result })
+    })
+    .catch(err => {
+        res.status(500).json({
+            error: err
+        })
     })
 });
 
 
 
+app.use((req, res, next) => {
+    const error = new Error("Not found");
+    error.status = 404;
+    next(error); //next calls the next function,
+  });
+  
+  app.use((error, req, res, next) => {
+    res.status(error.status);
+    res.render('error', { error });
+  });
 
+
+//Server is online at localhost:3000
 app.listen(port, () => console.log(`App listening on port ${port}!`));

@@ -18,19 +18,18 @@ block main
                             button(type='submit' class='deleteButton') 
                                             i.fas.fa-trash-alt
 
-        
-        form(action='/add', method='post', id="form")
+        div.formWrapper
+            form(action='/add', method='post', id="form")
                 label Add new grocery
                 input(type='text', placeholder='ex cucumber' required='true' name='item')
                 input(type='number', placeholder='ex 2' required='true' name='amount')
                 button(type='submit' class='addButton') Lägg till! 
-        
-        include form.pug
+            
+            include form.pug
         
         if searched.length > 0
             p= searched[0].item + ' finns det ' + searched[0].amount + ' st av'
-        else 
-            p finns inte med i listan
+        
 
         
 

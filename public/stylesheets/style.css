@@ -27,12 +27,12 @@ h1 {
     height: auto;
     background-color: white;
     display: flex;
-    justify-content: center;
     flex-direction: column;
     align-items: center;
     font-family: 'Caveat', cursive;
     font-size: 30px;
     margin-bottom: 20vh;
+    min-height: 500px;
 }
 
 .columns {
@@ -59,7 +59,7 @@ h1 {
 
 }
 
-.addButton {
+.addButton, .searchButton {
     width: 240px;
     height: 30px;
     border: none;
@@ -106,4 +106,21 @@ input {
     box-shadow: none;
     border: 1px solid lightgray;
     margin: 2%;
+}
+
+label {
+    width: 80%;
+    text-align: center;
+}
+
+.formWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40%;
+}
+
+form {
+    width: 40%;
+    margin: 5% 0%;
 }

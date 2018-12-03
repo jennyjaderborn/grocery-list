@@ -1,4 +1,4 @@
-var addButton = document.getElementById("showForm");
+/*var addButton = document.getElementById("showForm");
 
 addButton.addEventListener('click', (res) => {
     alert('hej')
@@ -61,4 +61,5 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
       })
     }*/
-  })
+    /*
+  })*/
